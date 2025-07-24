@@ -29,19 +29,28 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 } 
+        video: { 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: false
       });
-      setStream(mediaStream);
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Aguardar o vídeo carregar antes de definir como ativo
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+          setCameraActive(true);
+          toast.success("Câmera ativada");
+        };
       }
       
-      setCameraActive(true);
-      toast.success("Câmera ativada");
+      setStream(mediaStream);
     } catch (error) {
       console.error("Erro ao acessar câmera:", error);
-      toast.error("Erro ao acessar a câmera");
+      toast.error("Erro ao acessar a câmera. Verifique as permissões.");
     }
   };
 
