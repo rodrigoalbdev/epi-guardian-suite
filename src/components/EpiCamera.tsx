@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, CameraOff, RotateCcw } from "lucide-react";
+import { Camera, CameraOff, RotateCcw, Brain, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { useEpiDetection } from "@/hooks/useEpiDetection";
 
 interface EpiCameraProps {
   matricula: string;
@@ -21,10 +22,10 @@ export interface EpiAnalysisResult {
 }
 
 const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const { initializeModel, analyzeEpis, isModelLoading, isAnalyzing } = useEpiDetection();
 
   const startCamera = async () => {
     try {
@@ -48,6 +49,11 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
       }
       
       toast.success("Câmera ativada");
+      
+      // Inicializar modelo de IA em paralelo
+      initializeModel().then(() => {
+        toast.success("🧠 IA carregada - Detecção avançada ativada!");
+      });
     } catch (error) {
       console.error("Erro ao acessar câmera:", error);
       toast.error("Erro ao acessar a câmera. Verifique as permissões.");
@@ -65,62 +71,27 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
     setCameraActive(false);
   };
 
-  const simulateEpiAnalysis = (): EpiAnalysisResult => {
-    // Simulação da análise de EPIs com resultados aleatórios para demonstração
-    const scenarios = [
-      // Cenário 1: Todos os EPIs presentes
-      {
-        approved: true,
-        equipments: {
-          capacete: true,
-          oculos: true,
-          colete: true,
-          protecaoAuditiva: true,
-        },
-        missingItems: [],
-      },
-      // Cenário 2: Faltando capacete
-      {
-        approved: false,
-        equipments: {
-          capacete: false,
-          oculos: true,
-          colete: true,
-          protecaoAuditiva: true,
-        },
-        missingItems: ["Capacete"],
-      },
-      // Cenário 3: Faltando múltiplos itens
-      {
-        approved: false,
-        equipments: {
-          capacete: true,
-          oculos: false,
-          colete: false,
-          protecaoAuditiva: true,
-        },
-        missingItems: ["Óculos de proteção", "Colete de segurança"],
-      },
-    ];
-
-    return scenarios[Math.floor(Math.random() * scenarios.length)];
-  };
-
-  const analyzeEpis = async () => {
-    if (!cameraActive) {
+  const handleEpiAnalysis = async () => {
+    if (!cameraActive || !videoRef.current) {
       toast.error("Ative a câmera primeiro");
       return;
     }
 
-    setIsAnalyzing(true);
-    toast.info("Analisando EPIs...");
+    toast.info("🔍 Analisando EPIs com IA...");
 
-    // Simular tempo de processamento
-    setTimeout(() => {
-      const result = simulateEpiAnalysis();
-      setIsAnalyzing(false);
+    try {
+      const result = await analyzeEpis(videoRef.current);
       onAnalysisComplete(result);
-    }, 3000);
+      
+      if (result.approved) {
+        toast.success("✅ EPIs detectados com sucesso!");
+      } else {
+        toast.warning(`⚠️ ${result.missingItems.length} EPI(s) em falta detectado(s)`);
+      }
+    } catch (error) {
+      console.error("Erro na análise:", error);
+      toast.error("Erro na análise. Tente novamente.");
+    }
   };
 
   useEffect(() => {
@@ -157,12 +128,16 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
                 </div>
               )}
               
-              {isAnalyzing && (
+              {(isAnalyzing || isModelLoading) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <div className="text-center text-white">
                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-lg font-medium">Analisando EPIs...</p>
-                    <p className="text-sm opacity-80">Verificando equipamentos de segurança</p>
+                    <p className="text-lg font-medium">
+                      {isModelLoading ? "Carregando IA..." : "Analisando EPIs..."}
+                    </p>
+                    <p className="text-sm opacity-80">
+                      {isModelLoading ? "Preparando detecção avançada" : "Verificando equipamentos de segurança"}
+                    </p>
                   </div>
                 </div>
               )}
@@ -186,26 +161,35 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
                     Desativar
                   </Button>
                   <Button 
-                    onClick={analyzeEpis} 
+                    onClick={handleEpiAnalysis} 
                     variant="success" 
                     size="lg"
-                    disabled={isAnalyzing}
+                    disabled={isAnalyzing || isModelLoading}
                   >
-                    <RotateCcw className="h-4 w-4" />
-                    {isAnalyzing ? "Analisando..." : "Verificar EPIs"}
+                    {isModelLoading ? (
+                      <Brain className="h-4 w-4 animate-pulse" />
+                    ) : isAnalyzing ? (
+                      <RotateCcw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Zap className="h-4 w-4" />
+                    )}
+                    {isModelLoading ? "Carregando IA..." : isAnalyzing ? "Analisando..." : "Verificar EPIs"}
                   </Button>
                 </>
               )}
             </div>
 
             {/* Instruções */}
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h3 className="font-medium mb-2">Instruções:</h3>
+            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Brain className="h-5 w-5 text-primary" />
+                <h3 className="font-medium">IA Avançada - Detecção em Tempo Real</h3>
+              </div>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Posicione-se de frente para a câmera</li>
                 <li>• Certifique-se de que todos os EPIs estejam visíveis</li>
-                <li>• Aguarde a análise automática</li>
-                <li>• EPIs verificados: Capacete, Óculos, Colete, Proteção Auditiva</li>
+                <li>• IA analisa: Capacete, Óculos, Colete, Proteção Auditiva</li>
+                <li>• Baseado em modelos treinados com datasets reais</li>
               </ul>
             </div>
           </CardContent>
