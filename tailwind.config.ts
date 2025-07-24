@@ -52,6 +52,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				epi: {
+					success: 'hsl(var(--epi-success))',
+					'success-foreground': 'hsl(var(--epi-success-foreground))',
+					danger: 'hsl(var(--epi-danger))',
+					'danger-foreground': 'hsl(var(--epi-danger-foreground))',
+					warning: 'hsl(var(--epi-warning))',
+					'warning-foreground': 'hsl(var(--epi-warning-foreground))',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
