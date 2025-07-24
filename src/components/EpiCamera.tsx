@@ -37,17 +37,17 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
         audio: false
       });
       
+      setStream(mediaStream);
+      setCameraActive(true);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        // Aguardar o vídeo carregar antes de definir como ativo
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play();
-          setCameraActive(true);
-          toast.success("Câmera ativada");
         };
       }
       
-      setStream(mediaStream);
+      toast.success("Câmera ativada");
     } catch (error) {
       console.error("Erro ao acessar câmera:", error);
       toast.error("Erro ao acessar a câmera. Verifique as permissões.");
@@ -58,6 +58,9 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setCameraActive(false);
   };
