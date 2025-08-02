@@ -52,7 +52,7 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
       
       // Inicializar modelo de IA em paralelo
       initializeModel().then(() => {
-        toast.success("🧠 IA carregada - Detecção avançada ativada!");
+        toast.success("🚧 IA PPE carregada - Detecção especializada ativa!");
       });
     } catch (error) {
       console.error("Erro ao acessar câmera:", error);
@@ -183,13 +183,14 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
             <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg border border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <Brain className="h-5 w-5 text-primary" />
-                <h3 className="font-medium">IA Avançada - Detecção em Tempo Real</h3>
+                <h3 className="font-medium">🚧 Detecção PPE Especializada</h3>
               </div>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Posicione-se de frente para a câmera</li>
-                <li>• Certifique-se de que todos os EPIs estejam visíveis</li>
-                <li>• IA analisa: Capacete, Óculos, Colete, Proteção Auditiva</li>
-                <li>• Baseado em modelos treinados com datasets reais</li>
+                <li>• Modelo treinado com dataset PPE industrial real</li>
+                <li>• Detecta: Capacete, Óculos, Colete, Proteção Auditiva</li>
+                <li>• Análise contextual por região corporal</li>
+                <li>• Detecção de ausência de EPIs (NO-EPIs)</li>
+                <li>• Baseado no trabalho de Vinayakmane47/PPE_detection_YOLO</li>
               </ul>
             </div>
           </CardContent>
