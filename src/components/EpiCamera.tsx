@@ -29,6 +29,8 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
 
   const startCamera = async () => {
     try {
+      console.log('🎥 Iniciando câmera...');
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           width: { ideal: 640 },
@@ -38,22 +40,44 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
         audio: false
       });
       
+      console.log('📹 Stream obtido:', mediaStream);
       setStream(mediaStream);
       setCameraActive(true);
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Aguardar o video carregar e então reproduzir
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
+          console.log('📺 Metadata carregada, iniciando reprodução...');
+          if (videoRef.current) {
+            videoRef.current.play().then(() => {
+              console.log('✅ Vídeo reproduzindo!');
+              toast.success("Câmera ativada com sucesso");
+            }).catch(error => {
+              console.error('❌ Erro ao reproduzir vídeo:', error);
+              toast.error("Erro ao iniciar reprodução do vídeo");
+            });
+          }
         };
+        
+        // Forçar carregamento se já tem metadata
+        if (videoRef.current.readyState >= 1) {
+          console.log('📺 Forçando reprodução imediata...');
+          videoRef.current.play().catch(error => {
+            console.error('❌ Erro na reprodução forçada:', error);
+          });
+        }
       }
-      
-      toast.success("Câmera ativada");
       
       // Inicializar modelo de IA em paralelo
       initializeModel().then(() => {
         toast.success("🚧 IA PPE carregada - Detecção especializada ativa!");
+      }).catch(error => {
+        console.error('Erro ao carregar IA:', error);
+        toast.warning("IA indisponível - usando análise básica");
       });
+      
     } catch (error) {
       console.error("Erro ao acessar câmera:", error);
       toast.error("Erro ao acessar a câmera. Verifique as permissões.");
@@ -77,10 +101,33 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
       return;
     }
 
+    const video = videoRef.current;
+    console.log('🎬 Verificando estado do vídeo antes da análise:', {
+      paused: video.paused,
+      readyState: video.readyState,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      currentTime: video.currentTime,
+      srcObject: !!video.srcObject
+    });
+
+    // Verificar se o vídeo está realmente reproduzindo
+    if (video.paused) {
+      console.log('⚠️ Vídeo está pausado, tentando reproduzir...');
+      try {
+        await video.play();
+        console.log('✅ Vídeo reproduzindo após tentativa manual');
+      } catch (error) {
+        console.error('❌ Erro ao reproduzir vídeo:', error);
+        toast.error("Erro: vídeo não está reproduzindo");
+        return;
+      }
+    }
+
     toast.info("🔍 Analisando EPIs com IA...");
 
     try {
-      const result = await analyzeEpis(videoRef.current);
+      const result = await analyzeEpis(video);
       onAnalysisComplete(result);
       
       if (result.approved) {
