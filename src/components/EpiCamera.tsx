@@ -41,18 +41,25 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
       });
       
       console.log('📹 Stream obtido:', mediaStream);
-      setStream(mediaStream);
-      setCameraActive(true);
+      console.log('📹 Tracks do stream:', mediaStream.getVideoTracks());
       
       if (videoRef.current) {
+        console.log('📺 Atribuindo stream ao vídeo...');
         videoRef.current.srcObject = mediaStream;
         
-        // Aguardar o video carregar e então reproduzir
-        videoRef.current.onloadedmetadata = () => {
-          console.log('📺 Metadata carregada, iniciando reprodução...');
+        // Aguardar o vídeo carregar
+        const handleLoadedMetadata = () => {
+          console.log('📺 Metadata carregada, dimensões:', {
+            videoWidth: videoRef.current?.videoWidth,
+            videoHeight: videoRef.current?.videoHeight,
+            readyState: videoRef.current?.readyState
+          });
+          
           if (videoRef.current) {
             videoRef.current.play().then(() => {
-              console.log('✅ Vídeo reproduzindo!');
+              console.log('✅ Vídeo reproduzindo com sucesso!');
+              setStream(mediaStream);
+              setCameraActive(true);
               toast.success("Câmera ativada com sucesso");
             }).catch(error => {
               console.error('❌ Erro ao reproduzir vídeo:', error);
@@ -61,13 +68,18 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
           }
         };
         
-        // Forçar carregamento se já tem metadata
+        // Remover listener anterior se existir
+        videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+        
+        // Se já tem metadata, chamar imediatamente
         if (videoRef.current.readyState >= 1) {
-          console.log('📺 Forçando reprodução imediata...');
-          videoRef.current.play().catch(error => {
-            console.error('❌ Erro na reprodução forçada:', error);
-          });
+          console.log('📺 Metadata já disponível, reproduzindo...');
+          handleLoadedMetadata();
         }
+      } else {
+        console.error('❌ Ref do vídeo não encontrada');
+        toast.error("Erro interno: elemento de vídeo não encontrado");
       }
       
       // Inicializar modelo de IA em paralelo
