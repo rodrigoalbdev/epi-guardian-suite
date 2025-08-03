@@ -170,16 +170,20 @@ const EpiCamera = ({ matricula, onAnalysisComplete }: EpiCameraProps) => {
           <CardContent className="space-y-6">
             {/* Área da Câmera */}
             <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
-              {cameraActive ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+                style={{ 
+                  transform: 'scaleX(-1)',
+                  display: cameraActive ? 'block' : 'none'
+                }}
+              />
+              
+              {!cameraActive && (
+                <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-white/60">
                     <Camera className="h-16 w-16 mx-auto mb-4" />
                     <p>Câmera desativada</p>
