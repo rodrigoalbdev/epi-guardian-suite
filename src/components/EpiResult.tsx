@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, AlertTriangle, HardHat, Eye, Shirt, Headphones, Home, RotateCcw } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, HardHat, Eye, Shirt, Home, RotateCcw } from "lucide-react";
 import { EpiAnalysisResult } from "./EpiCamera";
 
 interface EpiResultProps {
@@ -11,19 +11,20 @@ interface EpiResultProps {
 }
 
 const EpiResult = ({ result, matricula, onBackToHome, onNewAnalysis }: EpiResultProps) => {
-  const epiIcons = {
+  const epiIcons: Record<string, any> = {
     capacete: HardHat,
-    oculos: Eye,
+    mascara: Eye,
     colete: Shirt,
-    protecaoAuditiva: Headphones,
   };
 
-  const epiNames = {
+  const epiNames: Record<string, string> = {
     capacete: "Capacete",
-    oculos: "Óculos de Proteção",
+    mascara: "Máscara/Óculos",
     colete: "Colete de Segurança",
-    protecaoAuditiva: "Proteção Auditiva",
   };
+
+  // Lista de todos os EPIs verificados
+  const allEpis = ['capacete', 'mascara', 'colete'];
 
   if (result.approved) {
     return (
@@ -49,14 +50,14 @@ const EpiResult = ({ result, matricula, onBackToHome, onNewAnalysis }: EpiResult
                 </p>
               </div>
 
-              {/* Grid de EPIs Aprovados */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(result.equipments).map(([key, isPresent]) => {
-                  const Icon = epiIcons[key as keyof typeof epiIcons];
-                  const name = epiNames[key as keyof typeof epiNames];
+              {/* Grid de EPIs Detectados */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {result.detectedEquipment.map((epi) => {
+                  const Icon = epiIcons[epi] || HardHat;
+                  const name = epiNames[epi] || epi;
                   
                   return (
-                    <div key={key} className="bg-epi-success/10 p-4 rounded-lg text-center">
+                    <div key={epi} className="bg-epi-success/10 p-4 rounded-lg text-center border border-epi-success/20">
                       <Icon className="h-8 w-8 mx-auto mb-2 text-epi-success" />
                       <p className="text-sm font-medium text-epi-success">{name}</p>
                       <CheckCircle className="h-4 w-4 mx-auto mt-1 text-epi-success" />
@@ -67,11 +68,11 @@ const EpiResult = ({ result, matricula, onBackToHome, onNewAnalysis }: EpiResult
 
               <div className="flex gap-4 justify-center pt-4">
                 <Button onClick={onBackToHome} variant="outline" size="lg">
-                  <Home className="h-4 w-4" />
+                  <Home className="mr-2 h-4 w-4" />
                   Voltar ao Início
                 </Button>
-                <Button onClick={onNewAnalysis} variant="success" size="lg">
-                  <RotateCcw className="h-4 w-4" />
+                <Button onClick={onNewAnalysis} variant="default" size="lg">
+                  <RotateCcw className="mr-2 h-4 w-4" />
                   Nova Verificação
                 </Button>
               </div>
@@ -112,24 +113,28 @@ const EpiResult = ({ result, matricula, onBackToHome, onNewAnalysis }: EpiResult
                 <h3 className="font-semibold text-epi-danger">EPIs em falta:</h3>
               </div>
               <ul className="space-y-2">
-                {result.missingItems.map((item, index) => (
-                  <li key={index} className="flex items-center text-epi-danger">
-                    <XCircle className="h-4 w-4 mr-2" />
-                    {item}
-                  </li>
-                ))}
+                {result.missingItems.map((item, index) => {
+                  const name = epiNames[item] || item;
+                  return (
+                    <li key={index} className="flex items-center text-epi-danger">
+                      <XCircle className="h-4 w-4 mr-2" />
+                      {name}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
             {/* Status de todos os EPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(result.equipments).map(([key, isPresent]) => {
-                const Icon = epiIcons[key as keyof typeof epiIcons];
-                const name = epiNames[key as keyof typeof epiNames];
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {allEpis.map((epi) => {
+                const Icon = epiIcons[epi] || HardHat;
+                const name = epiNames[epi] || epi;
+                const isPresent = result.detectedEquipment.includes(epi);
                 
                 return (
                   <div 
-                    key={key} 
+                    key={epi} 
                     className={`p-4 rounded-lg text-center ${
                       isPresent 
                         ? 'bg-epi-success/10 border border-epi-success/20' 
@@ -156,11 +161,11 @@ const EpiResult = ({ result, matricula, onBackToHome, onNewAnalysis }: EpiResult
 
             <div className="flex gap-4 justify-center pt-4">
               <Button onClick={onBackToHome} variant="outline" size="lg">
-                <Home className="h-4 w-4" />
+                <Home className="mr-2 h-4 w-4" />
                 Voltar ao Início
               </Button>
-              <Button onClick={onNewAnalysis} variant="danger" size="lg">
-                <RotateCcw className="h-4 w-4" />
+              <Button onClick={onNewAnalysis} variant="destructive" size="lg">
+                <RotateCcw className="mr-2 h-4 w-4" />
                 Tentar Novamente
               </Button>
             </div>
